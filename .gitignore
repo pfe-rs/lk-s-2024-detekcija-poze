@@ -5,3 +5,7 @@ images
 images_extract
 images_test
 images_training
+heat_maps
+test.py
+heat_maps_training
+heat_maps_test
