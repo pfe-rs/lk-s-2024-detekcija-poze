@@ -5,3 +5,7 @@ images
 images_extract
 images_test
 images_training
+heat_maps_test
+heat_maps_training
+heat_maps_training_plain
+heat_maps_test_plain
