@@ -1,7 +1,6 @@
 proba.py
 main.ipynb
 mpii_human_pose.csv
-images
-images_extract
-images_test
-images_training
+images*
+test.py
+heat_maps*
