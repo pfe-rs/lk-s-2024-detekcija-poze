@@ -1,4 +1,4 @@
-def gaussian_initializer(mean=0.0, stddev=0.01):
+def gaussian_initializer(mean=0.01, stddev=0.1):
     def _initializer(tensor):
         return nn.init.normal_(tensor, mean=mean, std=stddev)
     return _initializer

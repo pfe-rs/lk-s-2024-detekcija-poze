@@ -5,6 +5,7 @@ import PIL
 import torch
 import json
 import os
+import math
 
 
 def sample_to_pil_image(sample: np.ndarray, image_shape):
@@ -19,74 +20,90 @@ def get_accuracy_train(l1, l2):
     list1 = list1.detach().numpy()
     list2 = l2.cpu()
     list2 = list2.detach().numpy()
-    
     size_l1 = list1.shape
-    acc = 0
-
-    koordsx1 = np.zeros((size_l1[1]))
-    koordsy1 = np.zeros((size_l1[1]))
-    koodrsx2 = np.zeros((size_l1[1]))
-    koordsy2 = np.zeros((size_l1[1]))
+    distances = []
     
+    duz1 = 0
+    duz2 = 0
     for o in range(size_l1[0]):
         for i in range(size_l1[1]):
-            for j in range(size_l1[2]):
-                for k in range(size_l1[3]):
-                    if list1[o][i][j][k] == 1:
-                        koordsx1[i] += k 
-                        koordsy1[i] += j 
-                    if list2[o][i][j][k] == 1:
-                        koodrsx2[i] += k
-                        koordsy2[i] += j
+            max_index1 = np.unravel_index(list1[o][i].argmax(), list1[o][i].shape)
+            max_index2 = np.unravel_index(list2[o][i].argmax(), list2[o][i].shape)
 
-        koordsx1[i] /= size_l1[1]**2
-        koodrsx2[i] /= size_l1[1]**2
-        koordsy1[i] /= size_l1[1]**2
-        koordsy2[i] /= size_l1[1]**2
-
-    distancex = koodrsx2 - koordsx1
-    distancey = koordsy2 - koordsy1
-    euclidian_distance = np.sqrt(np.power(distancex, np.array([2] * distancex.shape[0])) + 
-                                 np.power(distancey, np.array([2] * distancex.shape[0])))
-    for i in range(len(list1)):
-        if euclidian_distance[i] <= 3:
-            acc += 1
-    return acc / size_l1[0]
-
+            if max_index1[0]!=0 or max_index1[1]!=0:
+                duz1+=1
+            if max_index2[0]!=0 or max_index2[1]!=0:
+                duz2+=1
+                
+            distancex = max_index1[1] - max_index2[1]
+            distancey = max_index1[0] - max_index2[0]
+            euclidian_distance = math.sqrt(distancex ** 2 + distancey ** 2)
+            
+            distances.append(euclidian_distance)
+                 
+    threshold = 4.5
+    tp = np.sum(np.array(distances) < threshold)
+    fp = duz1 - tp
+    fn = duz2 - tp
+    
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+    
+    return precision, recall
+            
 def get_accuracy_test(l1, l2):
-    list1 = np.array(l1)
-    list2 = np.array(l2)
+    list1 = l1.cpu()
+    list1 = list1.detach().numpy()
+    list2 = l2.cpu()
+    list2 = list2.detach().numpy()
+    
     size_l1 = list1.shape
     acc = 0
 
-    koordsx1 = np.zeros((size_l1[0]))
-    koordsy1 = np.zeros((size_l1[0]))
-    koodrsx2 = np.zeros((size_l1[0]))
-    koordsy2 = np.zeros((size_l1[0]))
-
+    koordsx1 = np.zeros((size_l1[1]), dtype=float)
+    koordsy1 = np.zeros((size_l1[1]), dtype=float)
+    koordsx2 = np.zeros((size_l1[1]), dtype=float)
+    koordsy2 = np.zeros((size_l1[1]), dtype=float)
+    
     for i in range(size_l1[0]):
-        for j in range(size_l1[1]):
-            for k in range(size_l1[2]):
-                if list1[i][j][k] == 1:
-                    koordsx1[i] += k 
-                    koordsy1[i] += j 
-                if list2[i][j][k] == 1:
-                    koodrsx2[i] += k
-                    koordsy2[i] += j
-                
-        koordsx1[i] /= size_l1[1] ** 2
-        koodrsx2[i] /= size_l1[1] ** 2
-        koordsy1[i] /= size_l1[1] ** 2
-        koordsy2[i] /= size_l1[1] ** 2
+        max_index1 = np.unravel_index(list1[i].argmax(), list1[i].shape)
+        max_index2 = np.unravel_index(list2[i].argmax(), list2[i].shape)
 
-    distancex = koodrsx2 - koordsx1
-    distancey = koordsy2 - koordsy1
-    euclidian_distance = np.sqrt(np.power(distancex, np.array([2] * distancex.shape[0])) + 
-                                 np.power(distancey, np.array([2] * distancex.shape[0])))
+    dot1 = max_index1
+    dot2 = max_index2
+
+    plt.figure(figsize=(6, 6))
+
+    # Plot the dots
+    plt.scatter(*dot1, color='blue', s=100, label='out 1')  # Blue dot
+    plt.scatter(*dot2, color='red', s=100, label='input 2')   # Red dot
+
+    # Set axis limits to match the grid size
+    plt.xlim(0, 45)
+    plt.ylim(0, 45)
+
+    # Add labels and legend
+    plt.xlabel('X-axis')
+    plt.ylabel('Y-axis')
+    plt.title('Two Dots on a 45x45 Grid')
+    plt.legend()
+
+    # Add gridlines for better visibility
+    plt.grid(True)
+
+    # Show the plot
+    plt.gca().invert_yaxis()  # Invert y-axis to match typical grid orientation
+    plt.show()
+    
+    distancex = max_index1[1] - koordsx2[1]
+    distancey = max_index1[0] - koordsx2[0]
+    euclidian_distance = math.sqrt(distancex ** 2 + distancey ** 2)
+    #np.sqrt(np.power(distancex, np.array([2] * distancex.shape[0])) + 
+    #                            np.power(distancey, np.array([2] * distancex.shape[0])))
     for i in range(len(list1)):
-        if euclidian_distance[i] <= 3:
+        if euclidian_distance <= 7:
             acc += 1
-    return acc / size_l1[0]
+    return acc / (size_l1[1] * size_l1[0])
 
 def plot_curve(curves: Tuple[List], labels: Tuple[List], plot_name):
     

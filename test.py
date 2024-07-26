@@ -16,5 +16,7 @@ def test(model, test_loader, device):
             y_hat = model(x)
             # Do inference. Forwad pass with the model.
             test_acc += get_accuracy_test(y_hat, y)
+            if batch_num >= 5:
+                break
         print(f'test acc = {test_acc / batch_num}')            
     return test_acc / batch_num

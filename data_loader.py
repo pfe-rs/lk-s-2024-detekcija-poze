@@ -25,19 +25,31 @@ class ImageDataset(Dataset):
         return len([name for name in os.listdir(self.img_dir)])
 
     def __getitem__(self, idx):
-        img_path = os.path.join(self.img_dir, os.listdir(self.img_dir)[idx])
-        image = read_image(img_path)
-        image = image / 255
+        img_files = os.listdir(self.img_dir)
+        heatmap_files = os.listdir(self.heat_maps_dir)
 
-        map_path = os.path.join(self.heat_maps_dir, os.listdir(self.heat_maps_dir)[idx])
-        mapa = np.load(map_path, allow_pickle=True)
+        img_name = img_files[idx]
+        img_path = os.path.join(self.img_dir, img_name)
+        
+        image = read_image(img_path).float() / 255.0
+        
+            
+
+        heatmap_name = f'hm_{img_name.replace(".jpg", ".npy")}'
+        if heatmap_name not in heatmap_files:
+            raise FileNotFoundError(f"Heatmap {heatmap_name} not found for image {img_name}")
+
+        heatmap_path = os.path.join(self.heat_maps_dir, heatmap_name)
+        heatmap = np.load(heatmap_path, allow_pickle=True)
+
         if self.transform:
             image = self.transform(image)
         if self.target_transform:
-            mapa = self.target_transform(mapa)
-        mapa = torch.tensor(mapa)
-        #self.center_map[:, :, :3] = image[:, :, :] #ili  random_array[:, :, 0]
-        return [image, mapa]    
+            heatmap = self.target_transform(heatmap)
+
+        heatmap = torch.tensor(heatmap)
+
+        return image, heatmap
 
     
 class DataLoader1():
