@@ -41,7 +41,7 @@ def get_accuracy_train(l1, l2):
             
             distances.append(euclidian_distance)
                  
-    threshold = 4.5
+    threshold = 7
     tp = np.sum(np.array(distances) < threshold)
     fp = duz1 - tp
     fn = duz2 - tp

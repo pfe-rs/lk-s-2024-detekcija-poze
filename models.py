@@ -8,6 +8,8 @@ import random
 
 
 
+
+
 class ModelAVE(nn.Module):
     def __init__(self):
         super(ModelAVE, self).__init__()
@@ -35,12 +37,12 @@ class Model1(nn.Module):
         # center_map_tensor = torch.tensor(center_map, dtype=torch.float16)
         # self.center_map = torch.nn.Parameter(center_map_tensor)
         
-    # def _initialize_weights(self):
-    #         for m in self.modules():
-    #             if isinstance(m, nn.Conv2d):
-    #                 gaussian_initializer()(m.weight)
-    #                 if m.bias is not None:
-    #                     constant_initializer()(m.bias)
+    def _initialize_weights(self):
+            for m in self.modules():
+                if isinstance(m, nn.Conv2d):
+                    gaussian_initializer()(m.weight)
+                    if m.bias is not None:
+                        constant_initializer()(m.bias)
 
     def forward(self, image):
         x1 = F.relu(self.conv1_stage1(image))
@@ -70,12 +72,12 @@ class Model2(nn.Module):
         # center_map_tensor = torch.tensor(center_map, dtype=torch.float16)
         # self.center_map = torch.nn.Parameter(center_map_tensor)
 
-    # def _initialize_weights(self):
-    #         for m in self.modules():
-    #             if isinstance(m, nn.Conv2d):
-    #                 gaussian_initializer()(m.weight)
-    #                 if m.bias is not None:
-    #                     constant_initializer()(m.bias)
+    def _initialize_weights(self):
+            for m in self.modules():
+                if isinstance(m, nn.Conv2d):
+                    gaussian_initializer()(m.weight)
+                    if m.bias is not None:
+                        constant_initializer()(m.bias)
 
     def forward(self, image):
         x2 = F.relu(self.conv1_stage2(image))
@@ -96,10 +98,10 @@ class ModelM2(nn.Module):
         self.Mconv3 = nn.Conv2d(128, 128, kernel_size=11, padding=5)
         self.Mconv4 = nn.Conv2d(128, 128, kernel_size=1)
         self.Mconv5 = nn.Conv2d(128, 15, kernel_size=1)
-        center_map_np = np.random.randint(2, size=(15, 368, 368))
-        center_map = center_map_np.tolist()
-        center_map_tensor = torch.tensor(center_map, dtype=torch.float16)
-        self.center_map = torch.nn.Parameter(center_map_tensor)
+        # center_map_np = np.random.randint(2, size=(15, 368, 368))
+        # center_map = center_map_np.tolist()
+        # center_map_tensor = torch.tensor(center_map, dtype=torch.float16)
+        # self.center_map = torch.nn.Parameter(center_map_tensor)
 
     def _initialize_weights(self):
             for m in self.modules():
@@ -125,10 +127,10 @@ class ModelM3(nn.Module):
         self.Mconv3 = nn.Conv2d(128, 128, kernel_size=11, padding=5)
         self.Mconv4 = nn.Conv2d(128, 128, kernel_size=1)
         self.Mconv5 = nn.Conv2d(128, 15, kernel_size=1)
-        center_map_np = np.random.randint(2, size=(15, 368, 368))
-        center_map = center_map_np.tolist()
-        center_map_tensor = torch.tensor(center_map, dtype=torch.float16)
-        self.center_map = torch.nn.Parameter(center_map_tensor)
+        # center_map_np = np.random.randint(2, size=(15, 368, 368))
+        # center_map = center_map_np.tolist()
+        # center_map_tensor = torch.tensor(center_map, dtype=torch.float16)
+        # self.center_map = torch.nn.Parameter(center_map_tensor)
 
     def _initialize_weights(self):
             for m in self.modules():
@@ -166,7 +168,7 @@ class Model3(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, model1, model2, model3, modelAVE, model2_M, model3_M):
+    def __init__(self, model1, model2, model3, modelAVE, model2_M, model3_M, ):
         super(Model, self).__init__()
         self.model1 = model1
         self.model2 = model2
@@ -174,8 +176,11 @@ class Model(nn.Module):
         self.modelAVE = modelAVE
         self.model2_M = model2_M
         self.model3_M = model3_M
-
-        center_map_np = np.random.randint(2, size=(10, 15, 368, 368))
+        self.model4_M = model3_M
+        self.model5_M = model3_M
+        self.model6_M = model3_M
+        
+        center_map_np = np.random.randint(2, size=(5, 15, 368, 368))
         center_map = center_map_np.tolist()
         center_map_tensor = torch.tensor(center_map, dtype=torch.float16)
         self.center_map = torch.nn.Parameter(center_map_tensor) 
@@ -188,25 +193,28 @@ class Model(nn.Module):
                     if m.bias is not None:
                         constant_initializer()(m.bias)
     
-    def forward(self, x): #x-image
-        print('before model1', torch.cuda.memory_reserved())
+    def forward(self, x, z): #x-image
+        a=z
+        for i in range(14):
+             a = torch.cat((a,z), dim=1)
+        #print(a.shape)
         output1 = self.model1(x)
-        print('after model1', torch.cuda.memory_reserved())
-        #print(output1.shape)
-        output2, input5 = self.model2(x)
-        print('after model2', torch.cuda.memory_reserved())
-        #print(output2.shape)
-        outputAVE = self.modelAVE(self.center_map)
-        print('after modelAVE', torch.cuda.memory_reserved())
-        #print(outputAVE.shape)
-        concatenated_output = torch.cat([output1, output2, outputAVE], dim=1)
-        #print(concatenated_output.shape)
-        output3 = self.model2_M(concatenated_output)
-        print('after model2_M', torch.cuda.memory_reserved())
-        output4 = self.model3(input5)
-        print('after model3', torch.cuda.memory_reserved())
-        concatenated_output1 = torch.cat([output3, outputAVE, output4], dim=1)
-        output5 = self.model3_M(concatenated_output1)
-        print('after model3_M', torch.cuda.memory_reserved())
-        return output5
+        # output2, input5 = self.model2(x)
+        # outputAVE = self.modelAVE(a) 
+        # concatenated_output = torch.cat([output1, output2, outputAVE], dim=1)
+        # output3 = self.model2_M(concatenated_output) 
+        # output4 = self.model3(input5)
+        # concatenated_output1 = torch.cat([output3, output4, outputAVE], dim=1)
+        # output5 = self.model3_M(concatenated_output1)
+        # output6 = output4
+        # concatenated_output2 = torch.cat([output5, output6, outputAVE], dim=1)
+        # output7 = self.model4_M(concatenated_output2)
+        # output8 = output4
+        # concatenated_output3 = torch.cat([output7, output8, outputAVE], dim =1)
+        # output9 = self.model5_M(concatenated_output3)
+        # output10 = output4
+        # concatenated_output4 = torch.cat([output9, output10, outputAVE], dim=1)
+        # output11 = self.model6_M(concatenated_output4)
+        
+        return output1
         

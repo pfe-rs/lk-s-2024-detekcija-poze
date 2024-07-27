@@ -27,14 +27,14 @@ def train(model, num_epochs, train_loader, store_dict, test_loader, device, loss
         valid_data_loader = DataLoader(test_loader, batch_size=batch_size) #, shuffle=True)
         #train_loader.used = []
         #for batch_num, (x, y) in tqdm(enumerate(train_data_loader)):
-        for batch_num, (x, y) in enumerate(train_data_loader):
+        for batch_num, (x, y, z) in enumerate(train_data_loader):
 
             x = x.to(device)
             y = y.to(device)
-
+            z = z.to(device)
             optimizer.zero_grad() 
             
-            y_hat = model(x)
+            y_hat = model(x, z.float())
             m = nn.Sigmoid()
             y_hat = m(y_hat).float()
             y = y.float()
@@ -43,7 +43,7 @@ def train(model, num_epochs, train_loader, store_dict, test_loader, device, loss
                 input1 = y_hat[0]
                 input1a = input1.cpu()
                 input1 = input1.to(device)
-                a = ['r ankle','r knee','r hip', 'l h0ipl', 'knee_X','l ankle_X','pelvis','thorax','upper neck','head top','r wrist','r elbow', 'r shoulder', 'l shoulder','l elbow','l wrist', 'back']
+                a = ['r ankle','r knee','r hip', 'l hipl', 'r knee','l ankle','pelvis','thorax','upper neck','head top','r wrist','r elbow', 'r shoulder', 'l shoulder','l elbow','l wrist', 'back']
                 for i in range(15):
                     output = input1a[i]
                     output = output.cpu()
@@ -73,8 +73,7 @@ def train(model, num_epochs, train_loader, store_dict, test_loader, device, loss
             
             # if batch_num == 0:
             #     break
-          
-        
+            
         # for param in model.parameters():
         #     param1 = param.cpu()
         #     store_dict = keep_store_dict(curve=param1, label='after_optimizer_step', store_dict=store_dict)  
@@ -92,8 +91,8 @@ def train(model, num_epochs, train_loader, store_dict, test_loader, device, loss
         v = '_'.join(v)
         torch.save(model,'/notebooks/lk-s-2024-detekcija-poze/models/model_'+ v +'.pth')
 
-#         if test_loader is not None:
-#             test_acc = test(model=model, test_loader=test_loader, device=device)
-#             store_dict = keep_store_dict(curve=test_acc, label='test_acc', store_dict=store_dict)
+        #         if test_loader is not None:
+        #             test_acc = test(model=model, test_loader=test_loader, device=device)
+        #             store_dict = keep_store_dict(curve=test_acc, label='test_acc', store_dict=store_dict)
         
     return store_dict

@@ -12,14 +12,16 @@ from torchvision import transforms
 
 
 class ImageDataset(Dataset):
-    def __init__(self, heat_maps_dir, img_dir, transform, center_map,  target_transform=None):
+    def __init__(self, heat_maps_dir, img_dir, transform, heat_maps_input, target_transform=None):
         self.heat_maps_dir = heat_maps_dir
         self.img_dir = img_dir
+        
+        self.heat_maps_input = heat_maps_input
         self.transform = transform = transforms.Compose([
             transforms.Resize(transform),
             ])
         self.target_transform = None
-        self.center_map = center_map
+        #self.center_map = center_map
 
     def __len__(self):
         return len([name for name in os.listdir(self.img_dir)])
@@ -27,7 +29,8 @@ class ImageDataset(Dataset):
     def __getitem__(self, idx):
         img_files = os.listdir(self.img_dir)
         heatmap_files = os.listdir(self.heat_maps_dir)
-
+        heat_maps_input_files = os.listdir(self.heat_maps_input)
+        
         img_name = img_files[idx]
         img_path = os.path.join(self.img_dir, img_name)
         
@@ -36,20 +39,31 @@ class ImageDataset(Dataset):
             
 
         heatmap_name = f'hm_{img_name.replace(".jpg", ".npy")}'
+        heatmap_input_name = f'hmi_{img_name.replace(".jpg", ".npy")}'
+
         if heatmap_name not in heatmap_files:
             raise FileNotFoundError(f"Heatmap {heatmap_name} not found for image {img_name}")
-
         heatmap_path = os.path.join(self.heat_maps_dir, heatmap_name)
         heatmap = np.load(heatmap_path, allow_pickle=True)
+
+
+        if heatmap_input_name not in heat_maps_input_files:
+            raise FileNotFoundError(f"Heatmap in {heatmap_name} not found for image {img_name}")
+        heatmap_input_path = os.path.join(self.heat_maps_input, heatmap_input_name)
+        heatmap_input = np.load(heatmap_input_path, allow_pickle=True)
+        heatmap_input = torch.from_numpy(np.array([heatmap_input]))
 
         if self.transform:
             image = self.transform(image)
         if self.target_transform:
             heatmap = self.target_transform(heatmap)
-
+        
+        
         heatmap = torch.tensor(heatmap)
 
-        return image, heatmap
+        
+
+        return image, heatmap, heatmap_input
 
     
 class DataLoader1():
