@@ -27,30 +27,42 @@ def train(model, num_epochs, train_loader, store_dict, test_loader, device, loss
         valid_data_loader = DataLoader(test_loader, batch_size=batch_size) #, shuffle=True)
         #train_loader.used = []
         #for batch_num, (x, y) in tqdm(enumerate(train_data_loader)):
-        for batch_num, (x, y, z) in enumerate(train_data_loader):
+        for batch_num, (x, y, z) in tqdm(enumerate(train_data_loader)):
 
             x = x.to(device)
             y = y.to(device)
             z = z.to(device)
-            optimizer.zero_grad() 
             
+            
+            
+            
+            
+            #optimizer.zero_grad() 
+            
+
+
+
+
+
+
+
             y_hat = model(x, z.float())
             m = nn.Sigmoid()
             y_hat = m(y_hat).float()
             y = y.float()
             #print(x.shape, y_hat.shape, y.shape)
-            if num_epochs == 55: 
+            if epoch % 5 == 0: 
                 input1 = y_hat[0]
                 input1a = input1.cpu()
                 input1 = input1.to(device)
                 a = ['r ankle','r knee','r hip', 'l hipl', 'r knee','l ankle','pelvis','thorax','upper neck','head top','r wrist','r elbow', 'r shoulder', 'l shoulder','l elbow','l wrist', 'back']
-                for i in range(15):
-                    output = input1a[i]
-                    output = output.cpu()
-                    numpy_array = output.detach().numpy()
-                    plt.imshow(numpy_array*255)
-                    plt.xlabel(a[i])
-                    plt.show()
+                # for i in range(15):
+                #     output = input1a[i]
+                #     output = output.cpu()
+                #     numpy_array = output.detach().numpy()
+                #     plt.imshow(numpy_array*255)
+                #     plt.xlabel(a[i])
+                #     plt.show()
 
             # print(y_hat.min(), y_hat.max())
 
@@ -87,9 +99,10 @@ def train(model, num_epochs, train_loader, store_dict, test_loader, device, loss
         #store_dict = keep_store_dict(curve=epoch_acc, label='train_acc', store_dict=store_dict)
         print('Epoch: %d | Loss: %.4f | Prec: %.4f | Rec: %.4f' \
               %(epoch + 1, epoch_loss, epoch_prec, epoch_rec))
-        v = time.asctime().split()
-        v = '_'.join(v)
-        torch.save(model,'/notebooks/lk-s-2024-detekcija-poze/models/model_'+ v +'.pth')
+        if (epoch + 1) % 5 == 0:
+            v = time.asctime().split()
+            v = '_'.join(v)
+            #torch.save(model,'models/model_'+ v +'.pth')
 
         #         if test_loader is not None:
         #             test_acc = test(model=model, test_loader=test_loader, device=device)
